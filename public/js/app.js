@@ -2012,6 +2012,14 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
+//
+//
+//
+//
+//
+//
+//
 
 
 
@@ -2038,7 +2046,7 @@ __webpack_require__.r(__webpack_exports__);
       }],
       product_variant_prices: [],
       dropzoneOptions: {
-        url: 'https://httpbin.org/post',
+        url: 'http://localhost/interview-question-sr/api/product/store',
         thumbnailWidth: 150,
         maxFilesize: 0.5,
         headers: {
@@ -2098,6 +2106,13 @@ __webpack_require__.r(__webpack_exports__);
       }, []);
       return ans;
     },
+    afterUploadComplete: function afterUploadComplete(response) {
+      if (response.status === "success") {
+        this.images.push(JSON.parse(response.xhr.response).data);
+      } else {
+        console.log("upload failed");
+      }
+    },
     // store product into database
     saveProduct: function saveProduct() {
       var product = {
@@ -2108,8 +2123,13 @@ __webpack_require__.r(__webpack_exports__);
         product_variant: this.product_variant,
         product_variant_prices: this.product_variant_prices
       };
-      axios.post('/product', product).then(function (response) {
-        console.log(response.data);
+      var url = "http://localhost/interview-question-sr/api/product/store";
+      axios.post(url, product).then(function (response) {
+        if (response.status == 200) {
+          if (confirm(response.data.message)) {
+            location.reload();
+          }
+        }
       })["catch"](function (error) {
         console.log(error);
       });
@@ -50566,7 +50586,8 @@ var render = function() {
             [
               _c("vue-dropzone", {
                 ref: "myVueDropzone",
-                attrs: { id: "dropzone", options: _vm.dropzoneOptions }
+                attrs: { id: "dropzone", options: _vm.dropzoneOptions },
+                on: { "vdropzone-complete": _vm.afterUploadComplete }
               })
             ],
             1

@@ -3,8 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Models\ProductImage;
+use App\Models\ProductVariant;
+use App\Models\ProductVariantPrice;
 use App\Models\Variant;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -76,7 +81,115 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        if ($request->file('file')) {
+            $file = $request->file('file');
+            $filename = time() . '_' . $file->getClientOriginalName();
+            $filename = str_replace(' ', '', $filename);
+            $file->storeAs('uploads', $filename);
 
+            return response()->json(['message' => 'Product Images Uploaded', 'data' => $filename], 200);
+        } else {
+            $product = Product::create([
+                'title' => $request->title,
+                'sku' => $request->sku,
+                'description' => $request->description
+            ]);
+
+            $productImages = $request->product_image;
+
+            if (!is_null($productImages)) {
+                foreach ($productImages as $pi) {
+                    ProductImage::create([
+                        'product_id' => $product->id,
+                        'file_path' => Storage::disk('public')->url("uploads/" . $pi),
+                        'thumbnail' => true
+                    ]);
+                }
+            }
+
+            $productVariants = $request->product_variant;
+            if (!is_null($productVariants)) {
+                foreach ($request->product_variant as $prodV) {
+                    foreach ($prodV['tags'] as $tag) {
+                        ProductVariant::create([
+                            'product_id' => $product->id,
+                            'variant' => $tag,
+                            'variant_id' => $prodV['option']
+                        ]);
+                    }
+                }
+            }
+
+            if (!is_null($request->product_variant_prices)) {
+
+                foreach ($request->product_variant_prices as $pvp) {
+                    $pvpTitle = array_filter(explode('/', $pvp['title']));
+
+                    if (count($pvpTitle) <= 1) {
+                        $product_variant_one = ProductVariant::where([
+                            'variant' => $pvpTitle[0],
+                            'product_id' => $product->id
+                        ])->first();
+
+                        ProductVariantPrice::create([
+                            'product_variant_one' => $product_variant_one->id,
+                            'price' => $pvp['price'],
+                            'stock' => $pvp['stock'],
+                            'product_id' => $product->id
+                        ]);
+
+                    } elseif (count($pvpTitle) <= 2) {
+                        $product_variant_one = ProductVariant::where([
+                            'variant' => $pvpTitle[0],
+                            'product_id' => $product->id
+                        ])->first();
+
+                        $product_variant_two = ProductVariant::where([
+                            'variant' => $pvpTitle[1],
+                            'product_id' => $product->id
+                        ])->first();
+
+                        ProductVariantPrice::create([
+                            'product_variant_one' => $product_variant_one->id,
+                            'product_variant_two' => $product_variant_two->id,
+                            'price' => $pvp['price'],
+                            'stock' => $pvp['stock'],
+                            'product_id' => $product->id
+                        ]);
+
+                    } elseif (count($pvpTitle) <= 3) {
+                        $product_variant_one = ProductVariant::where([
+                            'variant' => $pvpTitle[0],
+                            'product_id' => $product->id
+                        ])->first();
+
+                        $product_variant_two = ProductVariant::where([
+                            'variant' => $pvpTitle[1],
+                            'product_id' => $product->id
+                        ])->first();
+
+                        $product_variant_three = ProductVariant::where([
+                            'variant' => $pvpTitle[2],
+                            'product_id' => $product->id
+                        ])->first();
+
+                        ProductVariantPrice::create([
+                            'product_variant_one' => $product_variant_one->id,
+                            'product_variant_two' => $product_variant_two->id,
+                            'product_variant_three' => $product_variant_three->id,
+                            'price' => $pvp['price'],
+                            'stock' => $pvp['stock'],
+                            'product_id' => $product->id
+                        ]);
+                    }
+                }
+
+            }
+
+        }
+
+        return !is_null($product) ? response()->json(['message' => 'Product created successfully', 'data' => $product], 200)
+            : response()->json(['message' => 'Something went wrong'], 500);
     }
 
 

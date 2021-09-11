@@ -24,7 +24,12 @@
                         <h6 class="m-0 font-weight-bold text-primary">Media</h6>
                     </div>
                     <div class="card-body border">
-                        <vue-dropzone ref="myVueDropzone" id="dropzone" :options="dropzoneOptions"></vue-dropzone>
+                        <vue-dropzone
+                            ref="myVueDropzone"
+                            id="dropzone" :options="dropzoneOptions"
+                            @vdropzone-complete="afterUploadComplete">
+
+                        </vue-dropzone>
                     </div>
                 </div>
             </div>
@@ -49,16 +54,19 @@
                             </div>
                             <div class="col-md-8">
                                 <div class="form-group">
-                                    <label v-if="product_variant.length != 1" @click="product_variant.splice(index,1); checkVariant"
+                                    <label v-if="product_variant.length != 1"
+                                           @click="product_variant.splice(index,1); checkVariant"
                                            class="float-right text-primary"
                                            style="cursor: pointer;">Remove</label>
                                     <label v-else for="">.</label>
-                                    <input-tag v-model="item.tags" @input="checkVariant" class="form-control"></input-tag>
+                                    <input-tag v-model="item.tags" @input="checkVariant"
+                                               class="form-control"></input-tag>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer" v-if="product_variant.length < variants.length && product_variant.length < 3">
+                    <div class="card-footer"
+                         v-if="product_variant.length < variants.length && product_variant.length < 3">
                         <button @click="newVariant" class="btn btn-primary">Add another option</button>
                     </div>
 
@@ -126,7 +134,7 @@ export default {
             ],
             product_variant_prices: [],
             dropzoneOptions: {
-                url: 'https://httpbin.org/post',
+                url: 'http://localhost/interview-question-sr/api/product/store',
                 thumbnailWidth: 150,
                 maxFilesize: 0.5,
                 headers: {"My-Awesome-Header": "header value"}
@@ -177,6 +185,16 @@ export default {
             return ans;
         },
 
+        afterUploadComplete(response) {
+            if (response.status === "success") {
+                this.images.push(JSON.parse(response.xhr.response).data);
+            } else {
+                console.log("upload failed");
+            }
+
+        },
+
+
         // store product into database
         saveProduct() {
             let product = {
@@ -188,9 +206,14 @@ export default {
                 product_variant_prices: this.product_variant_prices
             }
 
+            let url = "http://localhost/interview-question-sr/api/product/store"
 
-            axios.post('/product', product).then(response => {
-                console.log(response.data);
+            axios.post(url, product).then(response => {
+                if (response.status == 200) {
+                    if (confirm(response.data.message)) {
+                        location.reload();
+                    }
+                }
             }).catch(error => {
                 console.log(error);
             })
