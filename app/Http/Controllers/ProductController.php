@@ -213,7 +213,9 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $variants = Variant::all();
-        return view('products.edit', compact('variants'));
+        $editableProduct = Product::with(['productVariants', 'productVariantPrices'])->findOrFail($product->id);
+
+        return view('products.edit', compact('variants', 'editableProduct'));
     }
 
     /**

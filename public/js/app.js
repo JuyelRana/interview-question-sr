@@ -2020,6 +2020,7 @@ __webpack_require__.r(__webpack_exports__);
 //
 //
 //
+//
 
 
 
@@ -2032,6 +2033,9 @@ __webpack_require__.r(__webpack_exports__);
     variants: {
       type: Array,
       required: true
+    },
+    editableProduct: {
+      type: Object
     }
   },
   data: function data() {
